@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Resume/CV Tailor — multi-user resume bullet matcher.
+  FastAPI (Mangum) on Lambda behind API Gateway, DynamoDB for users+bullets,
+  Amazon Bedrock (Nova Lite) for parsing/matching/CV generation.
+
+Parameters:
+  BedrockModelId:
+    Type: String
+    Default: amazon.nova-lite-v1:0
+    Description: Bedrock model id used for parse/match/CV calls.
+  JwtSecretParam:
+    Type: String
+    Default: /resume-tailor/jwt-secret
+    Description: >
+      Name of a pre-created SSM SecureString parameter holding the JWT signing
+      secret. Create it before deploy (CloudFormation cannot create SecureString):
+      aws ssm put-parameter --name /resume-tailor/jwt-secret --type SecureString
+      --value "$(openssl rand -hex 32)"
+  JwtExpireMinutes:
+    Type: String
+    Default: '1440'
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.12
+
+Resources:
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${AWS::StackName}-Users'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+
+  BulletsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${AWS::StackName}-ResumeBullets'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: bullet_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: bullet_id
+          KeyType: RANGE
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: python3.12
+    Properties:
+      CodeUri: .
+      Handler: app.main.handler
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          BULLETS_TABLE: !Ref BulletsTable
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+          JWT_SECRET_PARAM: !Ref JwtSecretParam
+          JWT_EXPIRE_MINUTES: !Ref JwtExpireMinutes
+          # DYNAMODB_ENDPOINT_URL intentionally unset -> real AWS DynamoDB
+      Policies:
+        # Least-privilege: only the exact actions/resources the app needs.
+        - Statement:
+            - Sid: DynamoDBAccess
+              Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:BatchWriteItem
+              Resource:
+                - !GetAtt UsersTable.Arn
+                - !GetAtt BulletsTable.Arn
+            - Sid: BedrockInvoke
+              Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource:
+                - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/${BedrockModelId}'
+                - !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/*'
+            - Sid: ReadJwtSecret
+              Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${JwtSecretParam}'
+      Events:
+        Root:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /
+            Method: ANY
+        Proxy:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /{proxy+}
+            Method: ANY
+
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+
+Outputs:
+  ApiBaseUrl:
+    Description: Base URL for the frontend's VITE_API_BASE_URL.
+    Value: !Sub 'https://${Api}.execute-api.${AWS::Region}.amazonaws.com/prod'
+  UsersTableName:
+    Value: !Ref UsersTable
+  BulletsTableName:
+    Value: !Ref BulletsTable

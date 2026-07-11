@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
-from . import auth, bullets, match
+from . import auth, bullets, match, resume_import
 
 app = FastAPI(title="Resume/CV Tailor", version="1.0.0")
 
@@ -28,5 +28,6 @@ def health():
 app.include_router(auth.router, tags=["auth"])
 app.include_router(bullets.router, tags=["bullets"])
 app.include_router(match.router, tags=["match"])
+app.include_router(resume_import.router, tags=["resume"])
 
 handler = Mangum(app)

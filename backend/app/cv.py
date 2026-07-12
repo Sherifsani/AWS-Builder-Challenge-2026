@@ -73,5 +73,10 @@ def generate_cv(req: GenerateCVRequest, user: dict = Depends(get_current_user)):
     content.setdefault("contact", profile["contact"])
     content.setdefault("headline", profile["headline"])
 
+    # Education and extra sections are factual — attach them verbatim from the stored
+    # profile rather than letting the model rephrase or drop them.
+    content["education"] = user.get("education") or []
+    content["sections"] = user.get("sections") or []
+
     tex = render_cv(content)
     return GenerateCVResponse(tex=tex, filename="tailored-cv.tex", content=content)

@@ -131,6 +131,28 @@ def render_cv(content: dict) -> str:
             "\\section{Summary}\n" + tex_escape(summary) + "\n"
         )
 
+    education = content.get("education") or []
+    edu_chunks: List[str] = []
+    for entry in education:
+        institution = tex_escape(entry.get("institution"))
+        credential = tex_escape(entry.get("credential"))
+        date = tex_escape(entry.get("date"))
+        location = tex_escape(entry.get("location"))
+        if not (institution or credential):
+            continue
+        edu_chunks.append(
+            "    \\resumeSubheading\n"
+            f"      {{{institution}}}{{{location}}}\n"
+            f"      {{{credential}}}{{{date}}}"
+        )
+    if edu_chunks:
+        body_parts.append(
+            "\\section{Education}\n"
+            "  \\resumeSubHeadingListStart\n"
+            + "\n".join(edu_chunks)
+            + "\n  \\resumeSubHeadingListEnd\n"
+        )
+
     experience = content.get("experience") or []
     exp_chunks: List[str] = []
     for entry in experience:
@@ -155,6 +177,23 @@ def render_cv(content: dict) -> str:
             "  \\resumeSubHeadingListStart\n"
             + "\n".join(exp_chunks)
             + "\n  \\resumeSubHeadingListEnd\n"
+        )
+
+    for section in content.get("sections") or []:
+        title = tex_escape(section.get("title"))
+        items = [i for i in (section.get("items") or []) if i]
+        if not (title and items):
+            continue
+        item_tex = "\n".join(
+            f"        \\resumeItem{{{tex_escape(i)}}}" for i in items
+        )
+        body_parts.append(
+            f"\\section{{{title}}}\n"
+            "  \\resumeSubHeadingListStart\n"
+            "    \\resumeItemListStart\n"
+            f"{item_tex}\n"
+            "    \\resumeItemListEnd\n"
+            "  \\resumeSubHeadingListEnd\n"
         )
 
     skills = [tex_escape(s) for s in (content.get("skills") or []) if s]

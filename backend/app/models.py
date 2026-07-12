@@ -22,10 +22,25 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class EducationEntry(BaseModel):
+    institution: Optional[str] = None
+    credential: Optional[str] = None  # e.g. "B.Sc. Computer Science"
+    date: Optional[str] = None
+    location: Optional[str] = None
+
+
+class ExtraSection(BaseModel):
+    """A non-experience resume section (Volunteering, Certifications, Awards…)."""
+    title: str
+    items: List[str] = Field(default_factory=list)
+
+
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     contact: Optional[str] = None
     headline: Optional[str] = None
+    education: Optional[List[EducationEntry]] = None
+    sections: Optional[List[ExtraSection]] = None
 
 
 class Profile(BaseModel):
@@ -34,6 +49,8 @@ class Profile(BaseModel):
     name: Optional[str] = None
     contact: Optional[str] = None
     headline: Optional[str] = None
+    education: List[EducationEntry] = Field(default_factory=list)
+    sections: List[ExtraSection] = Field(default_factory=list)
     created_at: Optional[str] = None
 
 

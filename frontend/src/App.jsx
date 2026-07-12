@@ -41,7 +41,7 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="logo">✦</span> Resume Tailor
+          <span className="logo">R</span> Résumé&nbsp;Bench
         </div>
         {authed && (
           <div className="topbar-right">
@@ -55,16 +55,30 @@ export default function App() {
 
       <main className="content">
         {!authed ? (
-          <Auth onAuthed={handleAuthed} />
+          <div className="auth-wrap">
+            <Auth onAuthed={handleAuthed} />
+          </div>
         ) : loading ? (
-          <p className="muted">Loading…</p>
+          <div className="hero"><p className="muted">Loading your bench…</p></div>
         ) : (
-          <Dashboard profile={profile} onProfileChange={setProfile} />
+          <>
+            <section className="hero">
+              <p className="hero-eyebrow">Tailor · Match · Ship</p>
+              <h1>
+                Cut a resume that fits <em>this</em> job.
+              </h1>
+              <p>
+                Keep one bank of bullets. Paste a job description and get a ranked,
+                keyword-checked resume — plus a polished CV you can download in a click.
+              </p>
+            </section>
+            <Dashboard profile={profile} onProfileChange={setProfile} />
+          </>
         )}
       </main>
 
-      <footer className="footer muted">
-        AWS Builder Center — Weekend Productivity Challenge
+      <footer className="footer">
+        Built for the AWS Builder Center — Weekend Productivity Challenge
       </footer>
     </div>
   )

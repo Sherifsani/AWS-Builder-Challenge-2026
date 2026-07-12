@@ -28,16 +28,25 @@ export default function MatchResults({ result, bullets }) {
       </div>
 
       <div className="result-block">
-        <h3>Missing keywords</h3>
-        {missing_keywords.length === 0 ? (
-          <p className="muted">None — good coverage.</p>
-        ) : (
-          <div className="tags">
-            {missing_keywords.map((k) => (
-              <span className="tag tag-missing" key={k}>{k}</span>
-            ))}
-          </div>
-        )}
+        <h3>Keyword gap</h3>
+        {/* Signature: tailoring a resume is a diff between your bullets and the JD. */}
+        <div className="keyword-diff">
+          {missing_keywords.length === 0 ? (
+            <>
+              <div className="kd-head">Coverage</div>
+              <div className="kd-line kd-ok">+ full coverage — no gaps found</div>
+            </>
+          ) : (
+            <>
+              <div className="kd-head">
+                {missing_keywords.length} keyword{missing_keywords.length === 1 ? '' : 's'} missing from your bullets
+              </div>
+              {missing_keywords.map((k) => (
+                <div className="kd-line kd-minus" key={k}>- {k}</div>
+              ))}
+            </>
+          )}
+        </div>
       </div>
 
       {suggested_order.length > 0 && (

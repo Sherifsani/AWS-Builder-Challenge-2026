@@ -51,7 +51,7 @@ export default function CVView({ bullets }) {
   return (
     <section className="card">
       <div className="card-head">
-        <h2>Generate tailored CV (LaTeX)</h2>
+        <h2>Tailored CV</h2>
       </div>
       <p className="muted">
         Builds a one-page CV from your profile and the bullets most relevant to this

@@ -28,9 +28,10 @@ export default function Auth({ onAuthed }) {
 
   return (
     <div className="card auth-card">
+      <p className="hero-eyebrow">Résumé Bench</p>
       <h1>{mode === 'login' ? 'Welcome back' : 'Create your account'}</h1>
       <p className="muted">
-        Store your resume bullets, then tailor them to any job description.
+        Keep one bank of bullets, then tailor them to any job description in seconds.
       </p>
 
       <form onSubmit={submit}>

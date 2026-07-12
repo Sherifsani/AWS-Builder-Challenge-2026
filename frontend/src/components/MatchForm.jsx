@@ -26,8 +26,12 @@ export default function MatchForm({ bullets }) {
   return (
     <section className="card">
       <div className="card-head">
-        <h2>Tailor to a job</h2>
+        <h2>Match &amp; gap analysis</h2>
       </div>
+      <p className="muted">
+        Paste a job description — we rank your bullets by fit and flag the keywords
+        you're missing.
+      </p>
       <form onSubmit={run}>
         <textarea
           rows={8}

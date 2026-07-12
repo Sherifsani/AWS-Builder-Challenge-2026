@@ -11,19 +11,55 @@ from fastapi import APIRouter, Depends, HTTPException
 from .auth import get_current_user
 from .bedrock import invoke_json
 from .bullets import store_bullets
+from .db import users_table
 from .models import BulletInput, ResumeImportRequest, ResumeImportResponse
 
 router = APIRouter()
 
 _SYSTEM = (
-    "You extract resume bullet points from raw resume text. Return every distinct "
-    "accomplishment/experience bullet you find. For each, infer the project/company, "
-    "the skills/technologies used, a category (one of: backend, frontend, cloud, AI, "
-    "other), and any quantified impact metric. "
+    "You parse raw resume text into structured JSON. Extract THREE things:\n"
+    "1. bullets: every distinct accomplishment/experience bullet. For each, infer "
+    "the project/company, skills/technologies used, a category (one of: backend, "
+    "frontend, cloud, AI, other), and any quantified impact metric.\n"
+    "2. education: every school/degree entry (institution, credential, date, location).\n"
+    "3. sections: any OTHER resume section that is not work experience or education — "
+    "e.g. Volunteering, Certifications, Awards, Leadership, Publications. Each has a "
+    "title and a list of verbatim item strings. Do NOT put work experience here.\n"
+    "Copy education and section text faithfully — do not summarise or invent. "
     "Respond with STRICT JSON only — no preamble, no markdown fences. "
     'Schema: {"bullets":[{"bullet":str,"project":str|null,"skills":[str],'
-    '"category":str,"impact_metric":str|null}]}'
+    '"category":str,"impact_metric":str|null}],'
+    '"education":[{"institution":str,"credential":str,"date":str|null,"location":str|null}],'
+    '"sections":[{"title":str,"items":[str]}]}'
 )
+
+
+def _clean_education(raw) -> list:
+    out = []
+    for e in raw or []:
+        if not isinstance(e, dict):
+            continue
+        if e.get("institution") or e.get("credential"):
+            out.append(
+                {
+                    "institution": e.get("institution"),
+                    "credential": e.get("credential"),
+                    "date": e.get("date"),
+                    "location": e.get("location"),
+                }
+            )
+    return out
+
+
+def _clean_sections(raw) -> list:
+    out = []
+    for s in raw or []:
+        if not isinstance(s, dict):
+            continue
+        items = [i for i in (s.get("items") or []) if i]
+        if s.get("title") and items:
+            out.append({"title": s["title"], "items": items})
+    return out
 
 
 def _extract_text(filename: str, data: bytes) -> str:
@@ -71,4 +107,16 @@ def import_resume(req: ResumeImportRequest, user: dict = Depends(get_current_use
         if b.get("bullet")
     ]
     created = store_bullets(user["user_id"], inputs, source="import")
+
+    # Persist education + extra sections on the user record so the CV generator can
+    # emit them verbatim (they must never be dropped or rephrased by the LLM).
+    education = _clean_education(result.get("education"))
+    sections = _clean_sections(result.get("sections"))
+    if education or sections:
+        users_table().update_item(
+            Key={"email": user["email"]},
+            UpdateExpression="SET education = :e, sections = :s",
+            ExpressionAttributeValues={":e": education, ":s": sections},
+        )
+
     return ResumeImportResponse(imported=len(created), bullets=created)

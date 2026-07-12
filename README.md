@@ -9,7 +9,7 @@ Built for the **AWS Builder Center — Weekend Productivity Challenge** (July 20
 fully serverless AWS stack: **Lambda · API Gateway · DynamoDB · Amazon Bedrock (Nova
 Lite) · S3**.
 
-🔗 **Live app:** http://resume-tailor-887862869466.s3-website-us-east-1.amazonaws.com
+🔗 **Deploy your own:** the entire stack (Lambda, API Gateway, DynamoDB, S3) stands up with a single `./deploy.sh` — see [Deploy](#deploy) below.
 
 ---
 

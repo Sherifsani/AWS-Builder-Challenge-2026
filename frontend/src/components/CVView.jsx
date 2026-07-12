@@ -1,5 +1,8 @@
-import { useRef, useState } from 'react'
+import { lazy, Suspense, useRef, useState } from 'react'
 import { api } from '../api'
+
+// react-pdf is ~1.4 MB; load it only once a CV exists (see CVPdfTools).
+const CVPdfTools = lazy(() => import('./CVPdfTools'))
 
 // Download a string as a file (client-side, no server round-trip).
 function downloadText(filename, text) {
@@ -51,8 +54,9 @@ export default function CVView({ bullets }) {
         <h2>Generate tailored CV (LaTeX)</h2>
       </div>
       <p className="muted">
-        Builds a one-page LaTeX CV from your profile and the bullets most relevant to
-        this job. Compile the <code>.tex</code> in Overleaf or locally.
+        Builds a one-page CV from your profile and the bullets most relevant to this
+        job. Preview and download a PDF right here (no LaTeX needed), or grab the{' '}
+        <code>.tex</code> to compile in Overleaf.
       </p>
 
       <form onSubmit={run}>
@@ -77,6 +81,9 @@ export default function CVView({ bullets }) {
 
       {result && (
         <div className="cv-output">
+          <Suspense fallback={<p className="muted">Loading PDF tools…</p>}>
+            <CVPdfTools content={result.content} filename={result.filename} />
+          </Suspense>
           <div className="row-actions cv-toolbar">
             <button className="btn-secondary" onClick={copy}>
               {copied ? 'Copied ✓' : 'Copy .tex'}
@@ -99,7 +106,10 @@ export default function CVView({ bullets }) {
               <button className="btn-secondary" type="submit">Open in Overleaf ↗</button>
             </form>
           </div>
-          <pre className="tex-source">{result.tex}</pre>
+          <details className="tex-details">
+            <summary>View LaTeX source</summary>
+            <pre className="tex-source">{result.tex}</pre>
+          </details>
         </div>
       )}
     </section>

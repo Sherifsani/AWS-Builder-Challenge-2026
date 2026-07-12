@@ -2,7 +2,7 @@
 
 **Tag:** `#productivity`
 
-**Live app:** http://resume-tailor-887862869466.s3-website-us-east-1.amazonaws.com
+**Code & one-command deploy:** `<your-repo-url>` — the whole stack (Lambda, API Gateway, DynamoDB, S3) stands up with a single `./deploy.sh`.
 
 ---
 

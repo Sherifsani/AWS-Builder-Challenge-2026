@@ -60,6 +60,14 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginBottom: 1,
   },
+  eduRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  eduInstitution: { fontFamily: 'Times-Bold' },
+  eduCredential: { fontFamily: 'Times-Italic', fontSize: 10 },
+  eduMeta: { fontSize: 10, textAlign: 'right' },
   bulletRow: {
     flexDirection: 'row',
     marginBottom: 1.5,
@@ -76,6 +84,8 @@ const styles = StyleSheet.create({
 export default function CVDocument({ content }) {
   const c = content || {}
   const experience = Array.isArray(c.experience) ? c.experience : []
+  const education = Array.isArray(c.education) ? c.education : []
+  const sections = Array.isArray(c.sections) ? c.sections : []
   const skills = Array.isArray(c.skills) ? c.skills.filter(Boolean) : []
 
   return (
@@ -89,6 +99,31 @@ export default function CVDocument({ content }) {
           <View>
             <Text style={styles.section}>Summary</Text>
             <Text style={styles.summary}>{c.summary}</Text>
+          </View>
+        ) : null}
+
+        {education.length > 0 ? (
+          <View>
+            <Text style={styles.section}>Education</Text>
+            {education.map((e, i) => {
+              if (!e || (!e.institution && !e.credential)) return null
+              return (
+                <View key={i} wrap={false}>
+                  <View style={styles.eduRow}>
+                    <Text style={styles.eduInstitution}>{e.institution}</Text>
+                    {e.location ? <Text style={styles.eduMeta}>{e.location}</Text> : null}
+                  </View>
+                  <View style={styles.eduRow}>
+                    {e.credential ? (
+                      <Text style={styles.eduCredential}>{e.credential}</Text>
+                    ) : (
+                      <Text />
+                    )}
+                    {e.date ? <Text style={styles.eduMeta}>{e.date}</Text> : null}
+                  </View>
+                </View>
+              )
+            })}
           </View>
         ) : null}
 
@@ -114,6 +149,22 @@ export default function CVDocument({ content }) {
             })}
           </View>
         ) : null}
+
+        {sections.map((s, i) => {
+          const items = (s?.items || []).filter(Boolean)
+          if (!s?.title || items.length === 0) return null
+          return (
+            <View key={i}>
+              <Text style={styles.section}>{s.title}</Text>
+              {items.map((it, j) => (
+                <View key={j} style={styles.bulletRow}>
+                  <Text style={styles.bulletMark}>•</Text>
+                  <Text style={styles.bulletText}>{it}</Text>
+                </View>
+              ))}
+            </View>
+          )
+        })}
 
         {skills.length > 0 ? (
           <View>
